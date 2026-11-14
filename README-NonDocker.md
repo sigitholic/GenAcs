@@ -24,11 +24,11 @@ sudo su
 ```
 ```bash
 # 2) Download Script GACS
-git clone https://github.com/safrinnetwork/GACS-Ubuntu-22.04
+git clone https://github.com/sigitholic/GenAcs.git
 ```
 ```bash
 # 3) Masuk ke folder GACS
-cd GACS-Ubuntu-22.04
+cd GenAcs
 ```
 ```bash
 # 4) Install dos2unix
@@ -46,6 +46,16 @@ chmod +x GACS-Jammy.sh
 # 7) Instal GACS
 ./GACS-Jammy.sh
 ```
+
+`./GACS-Jammy.sh` juga menjalankan `panel-guest.sh`. Skrip itu menyiapkan cetakan untuk panel:
+
+- kartu jaringan bridge memakai DHCP berdasarkan MAC, tanpa alamat tetap
+- `qemu-guest-agent` terpasang dan diaktifkan
+- nama komputer `genieacs-template`
+- cloud-init tidak menimpa pengaturan jaringan itu
+- berkas sewa DHCP dihapus dari disk
+
+Setelah skrip selesai, matikan VM dari Proxmox lalu jadikan template. Jangan menyalakan VM itu lagi sebelum dikonversi. Di panel, jalankan **Sesuaikan cetakan** sekali pada server tersebut.
 
 ---
 

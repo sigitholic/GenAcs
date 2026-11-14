@@ -171,3 +171,10 @@ for service in mongod genieacs-cwmp genieacs-nbi genieacs-fs genieacs-ui; do
 done
 
 echo -e "\n${GREEN}${BOLD}Script execution completed successfully!${NC}"
+
+guest="$(cd "$(dirname "$0")" && pwd)/panel-guest.sh"
+if [ ! -f "$guest" ]; then
+  echo -e "${RED}panel-guest.sh tidak ada di folder yang sama${NC}"
+  exit 1
+fi
+bash "$guest"
