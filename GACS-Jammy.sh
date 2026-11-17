@@ -178,3 +178,13 @@ if [ ! -f "$guest" ]; then
   exit 1
 fi
 bash "$guest"
+
+# starnetnms: restore parameter collections
+PARAMETER_DIR="$(cd "$(dirname "$0")" && pwd)/parameter"
+RESTORE_SH="$(cd "$(dirname "$0")" && pwd)/restore-parameter-collections.sh"
+if [[ -f "$PARAMETER_DIR/virtualParameters.bson" && -x "$RESTORE_SH" ]]; then
+  echo -e "${YELLOW}Restoring GenieACS parameter collections from parameter/...${NC}"
+  SKIP_CONFIG=1 VERIFY_VP=1 bash "$RESTORE_SH" "$PARAMETER_DIR"
+else
+  echo -e "${RED}Lewati restore parameter: folder parameter/ atau restore-parameter-collections.sh tidak ada${NC}"
+fi

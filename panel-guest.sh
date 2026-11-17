@@ -1,5 +1,5 @@
 #!/bin/bash
-# Aturan tamu untuk cetakan Proxmox yang di-clone panel.
+# Aturan tamu untuk cetakan Proxmox yang di-clone panel (fork cetakan Cloud StarnetNMS).
 # Berlaku untuk setiap kartu jaringan bridge yang ditemukan, tanpa alamat lab.
 set -euo pipefail
 
@@ -13,13 +13,29 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get install -y qemu-guest-agent cloud-init curl ca-certificates iproute2
 
+GA_UNIT=""
 if systemctl cat qemu-guest-agent >/dev/null 2>&1; then
-  systemctl enable qemu-guest-agent
+  GA_UNIT="qemu-guest-agent"
 elif systemctl cat qemu-ga >/dev/null 2>&1; then
-  systemctl enable qemu-ga
+  GA_UNIT="qemu-ga"
 else
   echo "Layanan qemu-guest-agent tidak ditemukan setelah dipasang"
   exit 1
+fi
+
+# Unit static di Ubuntu 22.04 — enable bisa gagal; yang wajib start/restart.
+systemctl enable "$GA_UNIT" 2>/dev/null || true
+systemctl restart "$GA_UNIT" 2>/dev/null || systemctl start "$GA_UNIT"
+
+VIRTIO="/dev/virtio-ports/org.qemu.guest_agent.0"
+if [ ! -e "$VIRTIO" ]; then
+  echo "PERINGATAN: $VIRTIO belum ada — qm guest cmd/exec belum akan jalan."
+  echo "  Di node Proxmox: qm set <VMID> --agent 1 && qm reboot <VMID>"
+  echo "  Setelah reboot tamu, ulangi: systemctl restart $GA_UNIT"
+elif ! systemctl is-active --quiet "$GA_UNIT"; then
+  echo "PERINGATAN: $GA_UNIT belum active — cek: journalctl -u $GA_UNIT -n 20"
+else
+  echo "qemu-guest-agent: active (virtio channel OK)."
 fi
 
 hostnamectl set-hostname genieacs-template
@@ -70,5 +86,9 @@ rm -f /var/lib/dhcpcd/*.lease /run/systemd/netif/leases/* /var/lib/systemd/netwo
 
 cloud-init clean --logs --machine-id
 
-echo "Aturan cetakan tertulis untuk ${primary}: DHCP berdasarkan MAC, agen tamu aktif, nama genieacs-template."
-echo "Matikan VM dari Proxmox, lalu jadikan template. Jangan menyalakan lagi sebelum dikonversi, supaya sewa DHCP tidak kembali ke disk."
+echo "Aturan cetakan tertulis untuk ${primary}: DHCP berdasarkan MAC, nama genieacs-template."
+echo "Sebelum convert template di Proxmox:"
+echo "  qm set <VMID> --agent 1"
+echo "  qm set <VMID> --ipconfig0 ip=dhcp   # disarankan"
+echo "  qm reboot <VMID>  →  qm guest cmd <VMID> ping"
+echo "Matikan VM bersih, lalu jadikan template (hindari boot lagi sebelum convert)."
